@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biruntha - Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --primary-glow: #f59e0b33;
+            --bg: #090b10;
+            --terminal-bg: #0d1017;
+            --terminal-border: #21262d;
+            --text-main: #c9d1d9;
+            --text-accent: #58a6ff;
+            --text-prompt: #2ea043;
+        }
+        
+        .dracula {
+            --bg: #1e1f29;
+            --terminal-bg: #282a36;
+            --terminal-border: #44475a;
+            --text-main: #f8f8f2;
+            --text-accent: #ff79c6;
+            --text-prompt: #50fa7b;
+        }
+
+        .cyberpunk {
+            --bg: #120424;
+            --terminal-bg: #1a0836;
+            --terminal-border: #ff007f;
+            --text-main: #00ffff;
+            --text-accent: #ff007f;
+            --text-prompt: #ffff00;
+        }
+        
+        .onedark {
+            --bg: #1e222a;
+            --terminal-bg: #21252b;
+            --terminal-border: #3e4452;
+            --text-main: #abb2bf;
+            --text-accent: #61afef;
+            --text-prompt: #98c379;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 3rem 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .terminal-window {
+            width: 100%;
+            max-width: 900px;
+            background: var(--terminal-bg);
+            border: 1px solid var(--terminal-border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+        .terminal-header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--terminal-border);
+            user-select: none;
+        }
+        .dots { display: flex; gap: 8px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27c93f; }
+        .terminal-tabs {
+            display: flex;
+            gap: 15px;
+            margin-left: 20px;
+            font-size: 0.85rem;
+        }
+        .theme-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--terminal-border);
+            color: var(--text-main);
+            font-family: inherit;
+            padding: 2px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            outline: none;
+        }
+        .theme-select:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .terminal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            scroll-behavior: smooth;
+        }
+        .command-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .prompt-line {
+            display: flex;
+            align-items: center;
+        }
+        .prompt-symbol {
+            color: var(--text-prompt);
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .cmd-text {
+            color: #fff;
+            font-weight: 600;
+        }
+        .cmd-output {
+            padding-left: 1.5rem;
+            color: var(--text-main);
+            opacity: 0.95;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0.5rem 0;
+        }
+        .skill-tag {
+            color: var(--text-accent);
+            border: 1px dashed var(--text-accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .project-block {
+            border-left: 2px solid var(--terminal-border);
+            padding-left: 12px;
+            margin: 8px 0;
+        }
+        .project-block h4 {
+            color: var(--text-accent);
+            margin-bottom: 2px;
+        }
+        .link-item a {
+            color: var(--primary);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--primary);
+        }
+        .link-item a:hover {
+            opacity: 0.8;
+        }
+        .interactive-line {
+            display: flex;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 1rem;
+        }
+        .terminal-input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-family: inherit;
+            font-size: inherit;
+            flex: 1;
+            outline: none;
+            caret-color: var(--primary);
+        }
+        .terminal-body::-webkit-scrollbar { width: 8px; }
+        .terminal-body::-webkit-scrollbar-track { background: transparent; }
+        .terminal-body::-webkit-scrollbar-thumb { background: var(--terminal-border); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="terminal-window" id="terminal">
+        <div class="terminal-header">
+            <div style="display: flex; align-items: center;">
+                <div class="dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                <div class="terminal-tabs">guest@portify:~</div>
+            </div>
+            <select class="theme-select" id="theme-selector" onchange="changeTheme(this.value)">
+                <option value="default">Default Dark</option>
+                <option value="dracula">Dracula</option>
+                <option value="onedark">One Dark</option>
+                <option value="cyberpunk">Cyberpunk</option>
+            </select>
+        </div>
+        <div class="terminal-body" id="history">
+            <div class="command-block">
+                <div class="prompt-line">
+                    <span class="prompt-symbol">➜ ~</span>
+                    <span class="cmd-text">whoami</span>
+                </div>
+                <div class="cmd-output" style="font-weight: bold; color: white;">Biruntha</div>
+            </div>
+
+            <div class="command-block">
+                <div class="prompt-line">
+                    <span class="prompt-symbol">➜ ~</span>
+                    <span class="cmd-text">cat bio.txt</span>
+                </div>
+                <div class="cmd-output">My Achievements
+I joined Hope3 Foundation in 2024, where I started learning Flutter development. After gaining strong knowledge in Flutter, I successfully developed my first Quiz App, followed by a Chemistry Quiz App as a practice and experimental project.
+My work and development skills were recognized, which led me to join Arjava Technologies as a Flutter Mobile App Developer Intern. My first client project at Arjava Technologies was CrewCall. Due to the successful progress and quality of my work, I was given opportunities to work on additional projects.
+Later, I joined Hope3 Services as a Mobile App Developer. During my time there, I worked on multiple client projects including:
+DFW Temple Walk App
+CSMT Temple Walk App
+CrewCall
+Overall, I have worked on 3 client-based mobile applications and several personal projects focused on improving user experience and real-world functionality.
+Currently, I am developing:
+A Version & Privacy Policy Control Panel
+An English learning application called One Word Wonder, which is currently in the Play Store deployment process.
+Through these experiences, I have gained practical knowledge in:
+Flutter Mobile App Development
+Firebase Integration
+Play Store Deployment
+UI/UX Design
+Client Project Handling
+Real-time Application Development</div>
+            </div>
+
+            <div class="command-block">
+                <div class="prompt-line">
+                    <span class="prompt-symbol">➜ ~</span>
+                    <span class="cmd-text">ls skills/</span>
+                </div>
+                <div class="cmd-output">
+                    <div class="skills-list">
+                        <span class="skill-tag">full stack developer</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="command-block">
+                <div class="prompt-line">
+                    <span class="prompt-symbol">➜ ~</span>
+                    <span class="cmd-text">tree projects/</span>
+                </div>
+                <div class="cmd-output">
+                    <div class="project-block"><h4>many client projects</h4><p>Source files generated successfully. Deployed static assets to edge CDN.</p></div>
+                </div>
+            </div>
+
+            <div class="command-block">
+                <div class="prompt-line">
+                    <span class="prompt-symbol">➜ ~</span>
+                    <span class="cmd-text">cat contact.json</span>
+                </div>
+                <div class="cmd-output">
+                    <div class="link-item">GitHub: <a href="https://github.com/biruntha-tech" target="_blank">https://github.com/biruntha-tech</a></div>
+                    <div class="link-item">LinkedIn: <a href="https://www.linkedin.com/in/biruntha-mageshwaran-226a95306?utm_source=share_via&utm_content=profile&utm_medium=member_android" target="_blank">https://www.linkedin.com/in/biruntha-mageshwaran-226a95306?utm_source=share_via&utm_content=profile&utm_medium=member_android</a></div>
+                </div>
+            </div>
+
+            <div class="interactive-line" id="input-line">
+                <span class="prompt-symbol">➜ ~</span>
+                <input type="text" class="terminal-input" id="cli" autofocus placeholder="Type 'help' for commands..." onkeydown="handleCommand(event)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function changeTheme(theme) {
+            const body = document.body;
+            body.className = '';
+            if (theme !== 'default') {
+                body.classList.add(theme);
+            }
+        }
+
+        const helpText = `Available commands:
+  - whoami   : Display full name
+  - bio      : Read about bio
+  - skills   : List tech stack & tools
+  - projects : Browse current projects
+  - contact  : View external profile links
+  - clear    : Clear terminal screen
+  - help     : Print this directory`;
+
+        function handleCommand(event) {
+            if (event.key === 'Enter') {
+                const input = document.getElementById('cli');
+                const cmd = input.value.trim().toLowerCase();
+                if (!cmd) return;
+
+                const history = document.getElementById('history');
+                const inputLine = document.getElementById('input-line');
+
+                const block = document.createElement('div');
+                block.className = 'command-block';
+                block.innerHTML = `<div class="prompt-line">
+                    <span class="prompt-symbol">➜ ~</span>
+                    <span class="cmd-text">${input.value}</span>
+                </div>`;
+
+                let output = '';
+                if (cmd === 'help') {
+                    output = `<div class="cmd-output">${helpText}</div>`;
+                } else if (cmd === 'whoami') {
+                    output = `<div class="cmd-output" style="font-weight: bold; color: white;">Biruntha</div>`;
+                } else if (cmd === 'bio') {
+                    output = `<div class="cmd-output">My Achievements
+I joined Hope3 Foundation in 2024, where I started learning Flutter development. After gaining strong knowledge in Flutter, I successfully developed my first Quiz App, followed by a Chemistry Quiz App as a practice and experimental project.
+My work and development skills were recognized, which led me to join Arjava Technologies as a Flutter Mobile App Developer Intern. My first client project at Arjava Technologies was CrewCall. Due to the successful progress and quality of my work, I was given opportunities to work on additional projects.
+Later, I joined Hope3 Services as a Mobile App Developer. During my time there, I worked on multiple client projects including:
+DFW Temple Walk App
+CSMT Temple Walk App
+CrewCall
+Overall, I have worked on 3 client-based mobile applications and several personal projects focused on improving user experience and real-world functionality.
+Currently, I am developing:
+A Version & Privacy Policy Control Panel
+An English learning application called One Word Wonder, which is currently in the Play Store deployment process.
+Through these experiences, I have gained practical knowledge in:
+Flutter Mobile App Development
+Firebase Integration
+Play Store Deployment
+UI/UX Design
+Client Project Handling
+Real-time Application Development</div>`;
+                } else if (cmd === 'skills') {
+                    output = `<div class="cmd-output">
+                        <div class="skills-list">
+                            <span class="skill-tag">full stack developer</span>
+                        </div>
+                    </div>`;
+                } else if (cmd === 'projects') {
+                    output = `<div class="cmd-output">
+                        <div class="project-block"><h4>many client projects</h4><p>Source files generated successfully. Deployed static assets to edge CDN.</p></div>
+                    </div>`;
+                } else if (cmd === 'contact') {
+                    output = `<div class="cmd-output">
+                        <div class="link-item">GitHub: <a href="https://github.com/biruntha-tech" target="_blank">https://github.com/biruntha-tech</a></div>
+                        <div class="link-item">LinkedIn: <a href="https://www.linkedin.com/in/biruntha-mageshwaran-226a95306?utm_source=share_via&utm_content=profile&utm_medium=member_android" target="_blank">https://www.linkedin.com/in/biruntha-mageshwaran-226a95306?utm_source=share_via&utm_content=profile&utm_medium=member_android</a></div>
+                    </div>`;
+                } else if (cmd === 'clear') {
+                    const blocks = history.querySelectorAll('.command-block');
+                    blocks.forEach(b => b.remove());
+                    input.value = '';
+                    return;
+                } else {
+                    output = `<div class="cmd-output" style="color: #ff5f56;">bash: command not found: ${cmd}. Type 'help' for options.</div>`;
+                }
+
+                block.innerHTML += output;
+                history.insertBefore(block, inputLine);
+                input.value = '';
+                history.scrollTop = history.scrollHeight;
+            }
+        }
+        
+        document.getElementById('terminal').addEventListener('click', () => {
+            document.getElementById('cli').focus();
+        });
+    </script>
+</body>
+</html>
